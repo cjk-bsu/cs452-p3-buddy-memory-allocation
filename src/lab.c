@@ -22,13 +22,6 @@
         raise(SIGKILL);                 \
     } while (0)
 
-/**
- * @brief Convert bytes to the smallest block size (power of two)
- *        such that block_size >= bytes, with a minimum of 2^SMALLEST_K.
- *
- * @param bytes the number of bytes required
- * @return size_t the block size (power-of-two value)
- */
  size_t btok(size_t bytes)
  {
     size_t k = 0;
@@ -46,16 +39,6 @@
     return k;
  }
 
-/**
- * @brief Given a block and its current kval, computes the address of its buddy.
- *
- * The buddy is calculated using XOR: the offset of the buddy from the base
- * is the offset of the block XOR 2^(kval). Bit shifting is used here.
- *
- * @param pool The memory pool containing the base address
- * @param buddy The block for which to compute the buddy
- * @return struct avail* Pointer to the buddy block
- */
 struct avail *buddy_calc(struct buddy_pool *pool, struct avail *buddy)
 {
     // Calculate current block size from the kval field: block size = 2^(kval)
@@ -68,23 +51,12 @@ struct avail *buddy_calc(struct buddy_pool *pool, struct avail *buddy)
     return (struct avail *)((char *)pool->base + buddy_offset);
 }
 
-/**
- * @brief Allocates a block of size bytes from the buddy memory pool.
- *        Finds the smallest free block large enough, splitting larger blocks as needed.
- *
- * @param pool The memory pool to allocate from
- * @param size The number of bytes requested by the user
- * @return void* Pointer to the allocated block (includes header) or NULL on error.
- */
 void *buddy_malloc(struct buddy_pool *pool, size_t size)
 {
     if (pool == NULL || size == 0) {
         return NULL;
     }
 
-    // Determine the required block size.
-    // Here we assume that the header is stored within the block so that
-    // the allocated block must be large enough to hold the requested size.
     size_t req_k = btok(size);
     if (req_k < SMALLEST_K)
         req_k = SMALLEST_K;
@@ -133,16 +105,6 @@ void *buddy_malloc(struct buddy_pool *pool, size_t size)
     return (void *)(block + 1);
 }
 
-/**
- * @brief Frees a previously allocated block, merging buddies if possible.
- *
- * When a block is freed, its buddy is computed. If the buddy is also free and
- * has the same size, the blocks are merged. This is repeated until no further
- * merging is possible.
- *
- * @param pool The memory pool from which the block was allocated.
- * @param ptr Pointer to the block to free.
- */
 void buddy_free(struct buddy_pool *pool, void *ptr)
 {
     if (ptr == NULL)
@@ -182,17 +144,6 @@ void buddy_free(struct buddy_pool *pool, void *ptr)
     pool->avail[k].next = block;
 }
 
-/**
- * @brief Reallocates a previously allocated block to a new size.
- *        For a NULL pointer, this behaves like buddy_malloc.
- *        If size is zero and ptr is not NULL, free the block.
- *        Otherwise, a new block is allocated, the content is copied, and the old block is freed.
- *
- * @param pool The memory pool
- * @param ptr The pointer to the block to reallocate
- * @param size The new desired size
- * @return void* A pointer to the newly allocated (or resized) block.
- */
 void *buddy_realloc(struct buddy_pool *pool, void *ptr, size_t size)
 {
     if (ptr == NULL)
@@ -233,13 +184,6 @@ void *buddy_realloc(struct buddy_pool *pool, void *ptr, size_t size)
     }
 }
 
-/**
- * @brief Initialize a new memory pool using the buddy algorithm.
- *        Rounds up the requested size to the nearest power of two.
- *
- * @param pool The pointer to the buddy_pool to initialize.
- * @param size The size of the pool in bytes. A value of 0 uses DEFAULT_K.
- */
 void buddy_init(struct buddy_pool *pool, size_t size)
 {
     size_t kval = 0;
@@ -287,11 +231,6 @@ void buddy_init(struct buddy_pool *pool, size_t size)
     m->next = m->prev = &pool->avail[kval];
 }
 
-/**
- * @brief Destroys a buddy memory pool and frees the underlying mapped memory.
- *
- * @param pool The memory pool to destroy.
- */
 void buddy_destroy(struct buddy_pool *pool)
 {
     int rval = munmap(pool->base, pool->numbytes);
@@ -303,8 +242,6 @@ void buddy_destroy(struct buddy_pool *pool)
     memset(pool, 0, sizeof(struct buddy_pool));
 }
 
-/* Utility function to print a 64-bit value in binary.
-   Useful for debugging buddy_calc. */
 int myMain(int argc, char** argv)
 {
     // Example usage and test of buddy_malloc and buddy_free.
