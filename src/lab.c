@@ -241,33 +241,3 @@ void buddy_destroy(struct buddy_pool *pool)
     // Clear out the pool structure for reuse if needed.
     memset(pool, 0, sizeof(struct buddy_pool));
 }
-
-int myMain(int argc, char** argv)
-{
-    // Example usage and test of buddy_malloc and buddy_free.
-    struct buddy_pool pool;
-    buddy_init(&pool, 0); // initialize with default size
-
-    // Allocate 100 bytes.
-    void *ptr = buddy_malloc(&pool, 100);
-    if (ptr == NULL) {
-        fprintf(stderr, "buddy_malloc failed\n");
-        return 1;
-    }
-    printf("Allocated 100 bytes at %p\n", ptr);
-
-    // Reallocate block to 200 bytes.
-    void *new_ptr = buddy_realloc(&pool, ptr, 200);
-    if (new_ptr == NULL) {
-        fprintf(stderr, "buddy_realloc failed\n");
-        return 1;
-    }
-    printf("Reallocated block to 200 bytes at %p\n", new_ptr);
-
-    // Free the block.
-    buddy_free(&pool, new_ptr);
-    printf("Freed the block.\n");
-
-    buddy_destroy(&pool);
-    return 0;
-}
